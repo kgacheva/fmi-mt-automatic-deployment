@@ -1,0 +1,16 @@
+# Project-specific
+**/private/*
+!**/private/*.gitkeep
+
+# Terraform and related
+**/.terraform
+**/.terraform.lock.hcl
+**/terraform.tfstate*
+
+# Packer and related
+
+
+# Visual Studio Code and related
+.vscode/*
+.history/
+*.code-workspace
