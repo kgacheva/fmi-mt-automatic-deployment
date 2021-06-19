@@ -12,6 +12,12 @@ variable "az_vnet_address_space" {
     default = ["10.0.0.0/24"]
 }
 
+variable "az_subnet_name" {}
+
+variable "az_subnet_address_prefixes" {
+    default = ["10.0.0.0/26"]
+}
+
 variable "az_pub_ip_name" {}
 
 variable "az_pub_ip_allocation_method" {}
@@ -38,3 +44,7 @@ variable "az_nsg_security_rule" {
         source_port_ranges                         = []
     },]
 }
+
+variable "az_vnic_name" {}
+
+variable "az_vnic_ip_config_name" {}
