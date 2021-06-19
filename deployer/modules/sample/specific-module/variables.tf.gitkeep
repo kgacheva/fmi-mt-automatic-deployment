@@ -1,0 +1,6 @@
+This is where to put the specification for the variables to
+be used by a specific deployment calling a common module.
+
+Any variable that will not be used with its default value as
+defined in the common modules' variables needs to be specified
+here.
