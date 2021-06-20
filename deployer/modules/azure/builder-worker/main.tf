@@ -52,3 +52,18 @@ module "azure-builder-worker-vnic" {
     az_vnic_subnet_id           = module.azure-builder-worker-subnet.out_az_subnet.id
     az_vnic_nsg_assoc_nsg_id    = module.azure-builder-worker-net-sec-group.out_az_net_sec_group.id
 }
+
+module "azure-builder-worker-vm" {
+    source                      = "../common/vm-linux-deploy"
+    az_vm_name                  = var.az_vm_name
+    az_vm_location              = module.azure-builder-worker-rg.out_az_rg.location
+    az_rg_name                  = module.azure-builder-worker-rg.out_az_rg.name
+    az_service_principal        = var.az_service_principal
+    az_vm_vnic_ids              = [module.azure-builder-worker-vnic.out_az_vnic.id]
+    az_vm_size                  = var.az_vm_size
+    az_vm_src_img               = var.az_vm_src_img
+    az_vm_src_img_plan          = var.az_vm_src_img_plan
+    az_vm_comp_name             = var.az_vm_comp_name
+    az_vm_admin_username        = var.az_vm_admin_username
+    az_vm_ssh_key               = var.az_vm_ssh_key
+}
