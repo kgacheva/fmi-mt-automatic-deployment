@@ -45,11 +45,6 @@ variable "az_vm_os_disk" {
         storage_acc_type = string
     })
     description = "The OS disk for the virtual machine"
-    default = {
-        name             = "os_disk_1"
-        caching          = "ReadWrite"
-        storage_acc_type = "Standard_LRS"
-    }
 }
 
 variable "az_vm_src_img" {

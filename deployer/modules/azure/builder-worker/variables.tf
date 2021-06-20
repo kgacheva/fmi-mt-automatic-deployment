@@ -51,36 +51,12 @@ variable "az_vnic_ip_config_name" {}
 
 variable "az_vm_name" {}
 
-variable "az_vm_size" {
-    default = "Standard_D2s_v3"
-}
+variable "az_vm_size" {}
 
-variable "az_vm_src_img" {
-    default = {
-        publisher = "cognosys"
-        offer     = "centos-7-9-free"
-        sku       = "centos-7-9-free"
-        version   = "1.2019.0810"
-    }
-}
-
-variable "az_vm_src_img_plan" {
-    default = {
-        name      = "centos-7-9-free"
-        product   = "centos-7-9-free"
-        publisher = "cognosys"
-    }
-}
+variable "az_vm_os_disk" {}
 
 variable "az_vm_comp_name" {}
 
-variable "az_vm_admin_username" {
-    default = "packer_admin"
-}
+variable "az_vm_admin_username" {}
 
-variable "az_vm_ssh_key" {
-    default = {
-        admin_username = "packer_admin"
-        pubkey_path    = "~/.ssh/id_rsa_azure.pub"
-    }
-}
+variable "az_vm_ssh_key" {}
