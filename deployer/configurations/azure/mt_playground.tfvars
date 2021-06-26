@@ -15,8 +15,14 @@ az_vm_os_disk = {
     caching          = "ReadWrite"
     storage_acc_type = "Standard_LRS"
 }
-az_vm_admin_username        = "packer_admin"
-az_vm_ssh_key               = {
+az_vm_ssh_key = {
     admin_username = "packer_admin"
     pubkey_path    = "~/.ssh/id_rsa_azure.pub"
+    privkey_path   = "~/.ssh/id_rsa_azure"
 }
+az_vm_provisioner_file_source      = "../../../scripts/builder-worker-config.sh"
+az_vm_provisioner_file_destination = "/tmp/builder-worker-config.sh"
+az_vm_remote_exec_commands = [
+    "chmod +x /tmp/builder-worker-config.sh",
+    "sudo /tmp/builder-worker-config.sh"
+]

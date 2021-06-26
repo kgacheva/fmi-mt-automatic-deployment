@@ -71,11 +71,6 @@ variable "az_vm_comp_name" {
     description = "The computer name for the virtual machine"
 }
 
-variable "az_vm_admin_username" {
-    type        = string
-    description = "The username for the admin account for the virtual machine"
-}
-
 variable "az_vm_disable_pass_auth" {
     type        = bool
     description = "Flag whether the password-based authentication for the admin account is disabled"
@@ -86,6 +81,25 @@ variable "az_vm_ssh_key" {
     type = object({
         admin_username = string
         pubkey_path    = string
+        privkey_path   = string
     })
     description = "The SSH key configuration used for authentication with the virtual machine"
+}
+
+variable "az_vm_provisioner_file_source" {
+    type        = string
+    description = "Path to a source script file to be run on the virtual machine; defaults to an empty one"
+    default     = "../../../scripts/empty.sh"
+}
+
+variable "az_vm_provisioner_file_destination" {
+    type        = string
+    description = "Path to where to put the script file on the virtual machine; defaults to /dev/null"
+    default     = "/dev/null"
+}
+
+variable "az_vm_remote_exec_commands" {
+    type        = list(string)
+    description = "List of commands to run on the virtual machine; defaults to the date command"
+    default     = ["date"]
 }

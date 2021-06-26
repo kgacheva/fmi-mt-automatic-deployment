@@ -31,8 +31,10 @@ module "azure-vm-vm" {
     az_vm_src_img               = var.az_vm_src_img
     az_vm_src_img_plan          = var.az_vm_src_img_plan
     az_vm_comp_name             = var.az_vm_comp_name
-    az_vm_admin_username        = var.az_vm_admin_username
     az_vm_ssh_key               = var.az_vm_ssh_key
+    az_vm_provisioner_file_source      = var.az_vm_provisioner_file_source
+    az_vm_provisioner_file_destination = var.az_vm_provisioner_file_destination
+    az_vm_remote_exec_commands         = var.az_vm_remote_exec_commands
 }
 
 output "az_vm_linux" {

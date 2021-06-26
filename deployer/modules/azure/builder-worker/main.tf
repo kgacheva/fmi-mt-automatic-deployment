@@ -33,21 +33,23 @@ module "azure-vm-net-sec-group" {
 }
 
 module "azure-builder-worker-vm" {
-    source                      = "../common/vm-linux-in-rg-deploy"
-    az_service_principal        = var.az_service_principal
-    az_rg_name                  = module.azure-vm-rg.out_az_rg.name
-    az_rg_location              = module.azure-vm-rg.out_az_rg.location
-    az_vnic_subnet_id           = module.azure-vm-subnet.out_az_subnet.id
-    az_vnic_nsg_assoc_nsg_id    = module.azure-vm-net-sec-group.out_az_net_sec_group.id
-    az_pub_ip_name              = var.az_pub_ip_name
-    az_pub_ip_allocation_method = var.az_pub_ip_allocation_method
-    az_nsg_name                 = var.az_nsg_name
-    az_vnic_name                = var.az_vnic_name
-    az_vnic_ip_config_name      = var.az_vnic_ip_config_name
-    az_vm_name                  = var.az_vm_name
-    az_vm_size                  = var.az_vm_size
-    az_vm_os_disk               = var.az_vm_os_disk
-    az_vm_comp_name             = var.az_vm_comp_name
-    az_vm_admin_username        = var.az_vm_admin_username
-    az_vm_ssh_key               = var.az_vm_ssh_key
+    source                             = "../common/vm-linux-in-rg-deploy"
+    az_service_principal               = var.az_service_principal
+    az_rg_name                         = module.azure-vm-rg.out_az_rg.name
+    az_rg_location                     = module.azure-vm-rg.out_az_rg.location
+    az_vnic_subnet_id                  = module.azure-vm-subnet.out_az_subnet.id
+    az_vnic_nsg_assoc_nsg_id           = module.azure-vm-net-sec-group.out_az_net_sec_group.id
+    az_pub_ip_name                     = var.az_pub_ip_name
+    az_pub_ip_allocation_method        = var.az_pub_ip_allocation_method
+    az_nsg_name                        = var.az_nsg_name
+    az_vnic_name                       = var.az_vnic_name
+    az_vnic_ip_config_name             = var.az_vnic_ip_config_name
+    az_vm_name                         = var.az_vm_name
+    az_vm_size                         = var.az_vm_size
+    az_vm_os_disk                      = var.az_vm_os_disk
+    az_vm_comp_name                    = var.az_vm_comp_name
+    az_vm_ssh_key                      = var.az_vm_ssh_key
+    az_vm_provisioner_file_source      = var.az_vm_provisioner_file_source
+    az_vm_provisioner_file_destination = var.az_vm_provisioner_file_destination
+    az_vm_remote_exec_commands         = var.az_vm_remote_exec_commands
 }

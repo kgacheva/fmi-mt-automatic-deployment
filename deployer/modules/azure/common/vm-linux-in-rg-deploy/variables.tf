@@ -45,8 +45,10 @@ variable "az_vm_src_img_plan" {
 
 variable "az_vm_comp_name" {}
 
-variable "az_vm_admin_username" {
-    default = "admin"
-}
-
 variable "az_vm_ssh_key" {}
+
+variable "az_vm_provisioner_file_source" {}
+
+variable "az_vm_provisioner_file_destination" {}
+
+variable "az_vm_remote_exec_commands" {}
