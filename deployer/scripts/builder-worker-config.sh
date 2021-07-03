@@ -34,9 +34,8 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc"
 EOF
 dnf install -y azure-cli
 
-# Add /usr/libexec to the PATH
-echo 'export PATH=$PATH:/usr/libexec' >> ~/.bashrc
-source ~/.bashrc
+# Add /usr/libexec to the PATH of the packer_admin user
+echo 'export PATH=$PATH:/usr/libexec' >> /home/packer_admin/.bashrc
 
 # Add packer_admin to the kvm group
 usermod -aG kvm packer_admin
