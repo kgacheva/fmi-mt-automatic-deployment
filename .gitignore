@@ -1,6 +1,7 @@
 # Project-specific
 **/private/*
 !**/private/*.gitkeep
+template-builder/isos
 
 # Terraform and related
 **/.terraform*
