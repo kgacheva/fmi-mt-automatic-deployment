@@ -8,7 +8,10 @@
 **/terraform.tfstate*
 
 # Packer and related
-
+**/packer_cache/
+**/crash.log
+**/output-*/
+**/*.box
 
 # Visual Studio Code and related
 .vscode/*
