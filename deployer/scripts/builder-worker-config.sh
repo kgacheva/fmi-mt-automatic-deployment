@@ -11,7 +11,7 @@ yum install -y packer
 
 # Install supplementary packages
 yum -y install epel-release
-yum install -y qemu-kvm htop screen dnf
+yum install -y qemu-kvm htop screen dnf git
 
 # Copy the qemu-kvm exec to the name expected by Packer
 cp /usr/libexec/qemu-kvm /usr/libexec/qemu-system-x86_64
