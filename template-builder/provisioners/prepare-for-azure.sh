@@ -21,14 +21,54 @@ EOF
 
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 
+cat > /etc/yum.repos.d/CentOS-Base.repo << EOF
+[openlogic]
+name=CentOS-$releasever - openlogic packages for $basearch
+baseurl=http://olcentgbl.trafficmanager.net/openlogic/$releasever/openlogic/$basearch/
+enabled=1
+gpgcheck=0
+
+[base]
+name=CentOS-$releasever - Base
+#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra
+baseurl=http://olcentgbl.trafficmanager.net/centos/$releasever/os/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+#released updates
+[updates]
+name=CentOS-$releasever - Updates
+#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra
+baseurl=http://olcentgbl.trafficmanager.net/centos/$releasever/updates/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+#additional packages that may be useful
+[extras]
+name=CentOS-$releasever - Extras
+#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra
+baseurl=http://olcentgbl.trafficmanager.net/centos/$releasever/extras/$basearch/
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+#additional packages that extend functionality of existing packages
+[centosplus]
+name=CentOS-$releasever - Plus
+#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus&infra=$infra
+baseurl=http://olcentgbl.trafficmanager.net/centos/$releasever/centosplus/$basearch/
+gpgcheck=1
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+EOF
+
+sudo yum clean all
+sudo yum -y update
+
 sed -i 's/GRUB_CMDLINE_LINUX=".*"/GRUB_CMDLINE_LINUX="rootdelay=300 console=ttyS0 earlyprintk=ttyS0 net.ifnames=0 " /' /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
 echo 'add_drivers+=" hv_vmbus hv_netvsc hv_storvsc "' >> /etc/dracut.conf
 dracut -f -v
-
-sudo yum clean all
-sudo yum -y update
 
 yum install -y python-pyasn1 WALinuxAgent
 
@@ -39,7 +79,6 @@ yum install -y cloud-init cloud-utils-growpart gdisk hyperv-daemons
 # Configure waagent for cloud-init
 sed -i 's/Provisioning.UseCloudInit=n/Provisioning.UseCloudInit=y/g' /etc/waagent.conf
 sed -i 's/Provisioning.Enabled=y/Provisioning.Enabled=n/g' /etc/waagent.conf
-
 
 echo "Adding mounts and disk_setup to init stage"
 sed -i '/ - mounts/d' /etc/cloud/cloud.cfg
@@ -82,4 +121,4 @@ rm -f ~/.bash_history
 
 export HISTSIZE=0
 
-reboot
+logout
