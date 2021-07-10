@@ -35,4 +35,10 @@ build {
     expect_disconnect = true
     script            = "provisioners/prepare-for-${var.templ_depl_environment}.sh"
   }
+
+  provisioner "shell" {
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
+    pause_before    = "10s"
+    script          = "provisioners/deprovision-for-${var.templ_depl_environment}.sh"
+  }
 }
