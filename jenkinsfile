@@ -1,0 +1,61 @@
+pipeline {
+
+  agent {
+    node {
+      label "master"
+    }
+  }
+
+  stages {
+
+    // TODO: Change back to the main branch
+    stage('Fetch repository') {
+      steps {
+        git branch: 'jenkins_deployment',
+        url: 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
+      }
+    }
+
+    stage('Terraform: Initialize workspace') {
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker init'
+      }
+    }
+
+    // stage('Terraform: Generate plan') {
+    //   steps {
+    //     // One or more steps need to be included within the steps block.
+    //   }
+    // }
+
+    // stage('Terraform: Approve plan') {
+    //   steps {
+    //     // One or more steps need to be included within the steps block.
+    //   }
+    // }
+
+    // stage('Terraform: Apply plan and deploy') {
+    //   steps {
+    //     // One or more steps need to be included within the steps block.
+    //   }
+    // }
+
+    // stage('Packer: Run templater') {
+    //   steps {
+    //     // One or more steps need to be included within the steps block.
+    //   }
+    // }
+
+    // stage('QEMU: Convert template') {
+    //   steps {
+    //     // One or more steps need to be included within the steps block.
+    //   }
+    // }
+
+    // stage('Azure: Upload template as an image') {
+    //   steps {
+    //     // One or more steps need to be included within the steps block.
+    //   }
+    // }
+  }
+}
