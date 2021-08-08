@@ -6,9 +6,16 @@ pipeline {
     }
   }
 
+  environment {
+    TF_VAR_az_subscription_id = credentials('jenkins-azure-subscription-id')
+    TF_VAR_az_client_id       = credentials('jenkins-azure-client-id')
+    TF_VAR_az_tenant_id       = credentials('jenkins-azure-tenant-id')
+    TF_VAR_az_client_secret   = credentials('jenkins-azure-client-secret')
+  }
+
   stages {
 
-    // TODO: Change back to the main branch
+    // FIXME: Change back to the main branch
     stage('Fetch repository') {
       steps {
         git branch: 'jenkins_deployment',
@@ -22,11 +29,13 @@ pipeline {
       }
     }
 
-    // stage('Terraform: Generate plan') {
-    //   steps {
-    //     // One or more steps need to be included within the steps block.
-    //   }
-    // }
+    // TODO: Handle the passing of the configuration file in a more flexible way
+    stage('Terraform: Generate plan') {
+      steps {
+        sh '''terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker plan
+        -var-file=../../../configurations/${TF_DEPL_ENV}/mt_playground.tfvars'''
+      }
+    }
 
     // stage('Terraform: Approve plan') {
     //   steps {
