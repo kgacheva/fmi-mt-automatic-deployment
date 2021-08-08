@@ -1,6 +1,12 @@
 ### Assigned in the separate tfvars files or provided runtime
 
-variable "az_service_principal" {}
+variable "az_subscription_id" {}
+
+variable "az_client_id" {}
+
+variable "az_tenant_id" {}
+
+variable "az_client_secret" {}
 
 variable "az_rg_name" {}
 
