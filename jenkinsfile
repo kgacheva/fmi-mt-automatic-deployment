@@ -2,7 +2,7 @@ pipeline {
 
   agent {
     node {
-      label "master"
+      label "slave01"
     }
   }
 
@@ -15,10 +15,9 @@ pipeline {
 
   stages {
 
-    // FIXME: Change back to the main branch
     stage('Fetch repository') {
       steps {
-        git branch: 'jenkins_deployment',
+        git branch: 'main',
         url: 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
       }
     }
@@ -29,25 +28,23 @@ pipeline {
       }
     }
 
-    // TODO: Handle the passing of the configuration file in a more flexible way
     stage('Terraform: Generate plan') {
       steps {
-        sh '''terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker plan
-        -var-file=../../../configurations/${TF_DEPL_ENV}/mt_playground.tfvars'''
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker plan -var-file=../../../configurations/${TF_DEPL_ENV}/builder_worker_eph.tfvars'
       }
     }
 
-    // stage('Terraform: Approve plan') {
-    //   steps {
-    //     // One or more steps need to be included within the steps block.
-    //   }
-    // }
+    stage('Terraform: Approve plan') {
+      steps {
+        input message: 'Apply the Terraform plan?', ok: 'Yes'
+      }
+    }
 
-    // stage('Terraform: Apply plan and deploy') {
-    //   steps {
-    //     // One or more steps need to be included within the steps block.
-    //   }
-    // }
+    stage('Terraform: Apply plan and deploy') {
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker apply -var-file=../../../configurations/${TF_DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+      }
+    }
 
     // stage('Packer: Run templater') {
     //   steps {
@@ -66,5 +63,11 @@ pipeline {
     //     // One or more steps need to be included within the steps block.
     //   }
     // }
+  }
+
+  post {
+    always {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker destroy -var-file=../../../configurations/${TF_DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+    }
   }
 }
