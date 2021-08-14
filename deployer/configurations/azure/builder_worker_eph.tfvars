@@ -1,5 +1,5 @@
 az_rg_name                  = "TemplateBuilderWorkerEphemeral"
-az_rg_location              = "westus"
+az_rg_location              = "eastus"
 az_vnet_name                = "builderWorkerEphVnet"
 az_subnet_name              = "builderWorkerEphSubnet"
 az_pub_ip_name              = "builderWorkerEphPubIP"
