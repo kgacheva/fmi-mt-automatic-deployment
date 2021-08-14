@@ -62,3 +62,7 @@ module "azure-builder-worker-vm" {
     az_vm_provisioner_file_destination = var.az_vm_provisioner_file_destination
     az_vm_remote_exec_commands         = var.az_vm_remote_exec_commands
 }
+
+output "out_az_builder_worker_ip" {
+  value = module.azure-builder-worker-vm.az_vm_linux.public_ip_address
+}
