@@ -21,6 +21,7 @@ wget https://aka.ms/downloadazcopy-v10-linux
 tar -zxvf downloadazcopy-v10-linux
 cp azcopy_linux_amd64_10.11.0/azcopy /usr/libexec
 rm -r downloadazcopy-v10-linux azcopy_linux_amd64_10.11.0
+sudo chown packer_admin:packer_admin /usr/libexec/azcopy
 
 # Install az
 sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
