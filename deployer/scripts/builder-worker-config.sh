@@ -43,3 +43,4 @@ usermod -aG kvm packer_admin
 
 # Accept the PKR_VAR_templ_ssh_password variable when sent over SSH
 echo "AcceptEnv PKR_VAR_templ_ssh_password" >> /etc/ssh/sshd_config
+systemctl reload sshd
