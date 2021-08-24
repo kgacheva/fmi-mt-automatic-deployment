@@ -41,4 +41,10 @@ build {
     pause_before    = "10s"
     script          = "provisioners/deprovision-for-${var.templ_depl_environment}.sh"
   }
+
+  post-processor "shell-local" {
+    environment_vars = ["PKR_SOURCE_NAME=${source.name}"],
+    execute_command  = ["/bin/sh", "{{ .Script }}"]
+    script           = "post-processors/convert-for-${var.templ_depl_environment}.sh"
+  }
 }
