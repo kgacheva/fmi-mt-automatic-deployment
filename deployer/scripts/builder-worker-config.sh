@@ -41,6 +41,9 @@ echo 'export PATH=$PATH:/usr/libexec' >> /home/packer_admin/.bashrc
 # Add packer_admin to the kvm group
 usermod -aG kvm packer_admin
 
-# Accept the PKR_VAR_templ_ssh_password variable when sent over SSH
-echo "AcceptEnv PKR_VAR_templ_ssh_password" >> /etc/ssh/sshd_config
+# Accept a number of system env variables when sent over SSH
+cat << EOF >> /etc/ssh/sshd_config
+AcceptEnv PKR_VAR_templ_ssh_password PKR_VAR_templ_depl_environment
+AcceptEnv TEMPL_OS_VER_TYPE TEMPL_GIT_URL
+EOF
 systemctl reload sshd
