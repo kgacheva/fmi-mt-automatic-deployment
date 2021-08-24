@@ -21,6 +21,7 @@ wget https://aka.ms/downloadazcopy-v10-linux
 tar -zxvf downloadazcopy-v10-linux
 cp azcopy_linux_amd64_10.11.0/azcopy /usr/libexec
 rm -r downloadazcopy-v10-linux azcopy_linux_amd64_10.11.0
+sudo chown packer_admin:packer_admin /usr/libexec/azcopy
 
 # Install az
 sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
@@ -39,3 +40,6 @@ echo 'export PATH=$PATH:/usr/libexec' >> /home/packer_admin/.bashrc
 
 # Add packer_admin to the kvm group
 usermod -aG kvm packer_admin
+
+# Accept the PKR_VAR_templ_ssh_password variable when sent over SSH
+echo "AcceptEnv PKR_VAR_templ_ssh_password" >> /etc/ssh/sshd_config
