@@ -11,6 +11,7 @@ pipeline {
     TF_VAR_az_client_id       = credentials('jenkins-azure-client-id')
     TF_VAR_az_tenant_id       = credentials('jenkins-azure-tenant-id')
     TF_VAR_az_client_secret   = credentials('jenkins-azure-client-secret')
+    GIT_URL                   = 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
   }
 
   stages {
@@ -18,19 +19,19 @@ pipeline {
     stage('Fetch repository') {
       steps {
         git branch: 'main',
-        url: 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
+        url: "${GIT_URL}"
       }
     }
 
     stage('Terraform: Initialize workspace') {
       steps {
-        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker init'
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker init'
       }
     }
 
     stage('Terraform: Generate plan') {
       steps {
-        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker plan -var-file=../../../configurations/${TF_DEPL_ENV}/builder_worker_eph.tfvars'
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker plan -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars'
       }
     }
 
@@ -42,17 +43,33 @@ pipeline {
 
     stage('Terraform: Apply plan and deploy') {
       steps {
-        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker apply -var-file=../../../configurations/${TF_DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker apply -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
       }
     }
 
-    // stage('Packer: Run templater') {
-    //   steps {
-    //     // One or more steps need to be included within the steps block.
-    //   }
-    // }
+    stage('Packer: Run templater') {
+      environment {
+        BUILDER_WORKER_IP = "${sh(script:'terraform output -json -state=deployer/modules/${DEPL_ENV}/builder-worker/terraform.tfstate | jq -r .out_az_builder_worker_ip.value', returnStdout: true).trim()}"
+        PKR_VAR_templ_depl_environment = "${sh(script:'echo ${DEPL_ENV}', returnStdout: true).trim()}"
+        TEMPL_OS_VER_TYPE = "${sh(script:'echo ${OS_VER}_${TYPE}', returnStdout: true).trim()}"
+        TEMPL_GIT_URL = "${sh(script:'echo ${GIT_URL}', returnStdout: true).trim()}"
+      }
 
-    // stage('QEMU: Convert template') {
+      steps {
+        script {
+          sh 'env'
+          sh '''ssh -tt -o StrictHostKeyChecking=no -o SendEnv=PKR_VAR_templ_ssh_password -o SendEnv=PKR_VAR_templ_depl_environment -o SendEnv=TEMPL_OS_VER_TYPE -o SendEnv=TEMPL_GIT_URL -i ~/.ssh/id_rsa_azure packer_admin@$BUILDER_WORKER_IP << ENDSSH
+            git clone ${TEMPL_GIT_URL} workspace
+            cd workspace/template-builder
+            packer init qemu-templater
+            packer build -only=qemu.${TEMPL_OS_VER_TYPE} -var-file=configurations/general-${TEMPL_OS_VER_TYPE}.pkrvars.hcl qemu-templater
+            exit
+            ENDSSH'''
+        }
+      }
+    }
+
+    // stage('Copy converted template') {
     //   steps {
     //     // One or more steps need to be included within the steps block.
     //   }
@@ -67,7 +84,7 @@ pipeline {
 
   post {
     always {
-        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${TF_DEPL_ENV}/builder-worker destroy -var-file=../../../configurations/${TF_DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+      sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker destroy -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
     }
   }
 }
