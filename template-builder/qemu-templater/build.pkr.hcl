@@ -43,8 +43,8 @@ build {
   }
 
   post-processor "shell-local" {
-    environment_vars = ["PKR_SOURCE_NAME=${source.name}"],
-    execute_command  = ["/bin/sh", "{{ .Script }}"]
+    environment_vars = ["PKR_SOURCE_NAME=${source.name}"]
+    execute_command  = ["chmod +x {{ .Script }}; {{ .Vars }} sh {{ .Script }}"]
     script           = "post-processors/convert-for-${var.templ_depl_environment}.sh"
   }
 }
