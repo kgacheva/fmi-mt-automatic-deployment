@@ -6,6 +6,13 @@ pipeline {
     }
   }
 
+  parameters {
+    string defaultValue: 'azure', description: 'Environment in which the template should be built and stored; defaults to azure', name: 'DEPL_ENV', trim: true
+    string defaultValue: 'centos79', description: 'The version of the OS for which the template is built; defaults to centos79', name: 'OS_VER', trim: true
+    string defaultValue: 'minimal', description: 'The type of the template deployment which is built; defaults to minimal', name: 'TYPE', trim: true
+    password defaultValue: '', description: 'Password to use for the template VM; as set in the installer file', name: 'PKR_VAR_templ_ssh_password'
+  }
+
   environment {
     TF_VAR_az_subscription_id = credentials('jenkins-azure-subscription-id')
     TF_VAR_az_client_id       = credentials('jenkins-azure-client-id')
@@ -57,7 +64,6 @@ pipeline {
 
       steps {
         script {
-          sh 'env'
           sh '''ssh -tt -o StrictHostKeyChecking=no -o SendEnv=PKR_VAR_templ_ssh_password -o SendEnv=PKR_VAR_templ_depl_environment -o SendEnv=TEMPL_OS_VER_TYPE -o SendEnv=TEMPL_GIT_URL -i ~/.ssh/id_rsa_azure packer_admin@$BUILDER_WORKER_IP << ENDSSH
             git clone ${TEMPL_GIT_URL} workspace
             cd workspace/template-builder
