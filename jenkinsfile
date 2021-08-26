@@ -7,7 +7,7 @@ pipeline {
   }
 
   parameters {
-    string defaultValue: 'azure', description: 'Environment in which the template should be built and stored; defaults to azure', name: 'DEPL_ENV', trim: true
+    string defaultValue: 'azure', description: 'Environment in which the template should be built and stored; defaults to azure [Templates: templstorage (templates-container)]', name: 'DEPL_ENV', trim: true
     string defaultValue: 'centos79', description: 'The version of the OS for which the template is built; defaults to centos79', name: 'OS_VER', trim: true
     string defaultValue: 'minimal', description: 'The type of the template deployment which is built; defaults to minimal', name: 'TYPE', trim: true
     password defaultValue: '', description: 'Password to use for the template VM; as set in the installer file', name: 'PKR_VAR_templ_ssh_password'
@@ -75,17 +75,26 @@ pipeline {
       }
     }
 
-    // stage('Copy converted template') {
-    //   steps {
-    //     // One or more steps need to be included within the steps block.
-    //   }
-    // }
+    stage('Azure: Upload template as an image') {
+      environment {
+        BUILDER_WORKER_IP  = "${sh(script:'terraform output -json -state=deployer/modules/${DEPL_ENV}/builder-worker/terraform.tfstate | jq -r .out_az_builder_worker_ip.value', returnStdout: true).trim()}"
+        TEMPL_OS_VER_TYPE  = "${sh(script:'echo ${OS_VER}_${TYPE}', returnStdout: true).trim()}"
+        AZ_RESOURCE_GROUP  = "Templates"
+        AZ_STORAGE_ACCOUNT = "templstorage"
+        AZ_CONTAINER       = "templates-container"
+        AZ_EXPIRATION      = "${sh(script:'echo $(date -ud "2 hours" "+%Y-%m-%dT%TZ" 2> /dev/null) || expiration=$(date -uv +2H "+%Y-%m-%dT%TZ")', returnStdout: true).trim()}"
+        AZ_IMAGE_NAME      = "${sh(script:'echo template-${OS_VER}_${TYPE}-$(date +"%y-%m-%d_%H-%M-%S").vhd', returnStdout: true).trim()}"
+      }
 
-    // stage('Azure: Upload template as an image') {
-    //   steps {
-    //     // One or more steps need to be included within the steps block.
-    //   }
-    // }
+      when {
+        expression { DEPL_ENV ==~ /(azure)/ }
+      }
+      steps {
+        script {
+          sh 'rsync -avhe "ssh -i ~/.ssh/id_rsa_azure" packer_admin@$BUILDER_WORKER_IP:/home/packer_admin/workspace/template-builder/output-${TEMPL_OS_VER_TYPE}/packer-${TEMPL_OS_VER_TYPE}.vhd /tmp/template_output_image'
+        }
+      }
+    }
   }
 
   post {
