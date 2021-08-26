@@ -1,0 +1,116 @@
+pipeline {
+
+  agent {
+    node {
+      label "slave01"
+    }
+  }
+
+  parameters {
+    string defaultValue: 'azure', description: 'Environment in which the template should be built and stored; defaults to azure [Templates: templstorage (templates-container)]', name: 'DEPL_ENV', trim: true
+    string defaultValue: 'centos79', description: 'The version of the OS for which the template is built; defaults to centos79', name: 'OS_VER', trim: true
+    string defaultValue: 'minimal', description: 'The type of the template deployment which is built; defaults to minimal', name: 'TYPE', trim: true
+    password defaultValue: '', description: 'Password to use for the template VM; as set in the installer file', name: 'PKR_VAR_templ_ssh_password'
+  }
+
+  environment {
+    TF_VAR_az_subscription_id = credentials('jenkins-azure-subscription-id')
+    TF_VAR_az_client_id       = credentials('jenkins-azure-client-id')
+    TF_VAR_az_tenant_id       = credentials('jenkins-azure-tenant-id')
+    TF_VAR_az_client_secret   = credentials('jenkins-azure-client-secret')
+    GIT_URL                   = 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
+  }
+
+  stages {
+
+    stage('Fetch repository') {
+      steps {
+        git branch: 'main',
+        url: "${GIT_URL}"
+      }
+    }
+
+    stage('Terraform: Initialize workspace') {
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker init'
+      }
+    }
+
+    stage('Terraform: Generate plan') {
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker plan -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars'
+      }
+    }
+
+    stage('Terraform: Approve plan') {
+      steps {
+        input message: 'Apply the Terraform plan?', ok: 'Yes'
+      }
+    }
+
+    stage('Terraform: Apply plan and deploy') {
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker apply -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+      }
+    }
+
+    stage('Packer: Run templater') {
+      environment {
+        BUILDER_WORKER_IP = "${sh(script:'terraform output -json -state=deployer/modules/${DEPL_ENV}/builder-worker/terraform.tfstate | jq -r .out_az_builder_worker_ip.value', returnStdout: true).trim()}"
+        PKR_VAR_templ_depl_environment = "${sh(script:'echo ${DEPL_ENV}', returnStdout: true).trim()}"
+        TEMPL_OS_VER_TYPE = "${sh(script:'echo ${OS_VER}_${TYPE}', returnStdout: true).trim()}"
+        TEMPL_GIT_URL = "${sh(script:'echo ${GIT_URL}', returnStdout: true).trim()}"
+      }
+
+      steps {
+        script {
+          sh '''ssh -tt -o StrictHostKeyChecking=no -o SendEnv=PKR_VAR_templ_ssh_password -o SendEnv=PKR_VAR_templ_depl_environment -o SendEnv=TEMPL_OS_VER_TYPE -o SendEnv=TEMPL_GIT_URL -i ~/.ssh/id_rsa_azure packer_admin@$BUILDER_WORKER_IP << ENDSSH
+            git clone ${TEMPL_GIT_URL} workspace
+            cd workspace/template-builder
+            packer init qemu-templater
+            packer build -only=qemu.${TEMPL_OS_VER_TYPE} -var-file=configurations/general-${TEMPL_OS_VER_TYPE}.pkrvars.hcl qemu-templater
+            exit
+            ENDSSH'''
+        }
+      }
+    }
+
+    stage('Azure: Upload template as an image') {
+      environment {
+        BUILDER_WORKER_IP  = "${sh(script:'terraform output -json -state=deployer/modules/${DEPL_ENV}/builder-worker/terraform.tfstate | jq -r .out_az_builder_worker_ip.value', returnStdout: true).trim()}"
+        TEMPL_OS_VER_TYPE  = "${sh(script:'echo ${OS_VER}_${TYPE}', returnStdout: true).trim()}"
+        AZ_RESOURCE_GROUP  = "Templates"
+        AZ_STORAGE_ACCOUNT = "templstorage"
+        AZ_CONTAINER       = "templates-container"
+        AZ_LOCATION        = "eastus"
+        AZ_EXPIRATION      = "${sh(script:'echo $(date -ud "2 hours" "+%Y-%m-%dT%TZ" 2> /dev/null) || expiration=$(date -uv +2H "+%Y-%m-%dT%TZ")', returnStdout: true).trim()}"
+        AZ_IMAGE_NAME      = "${sh(script:'echo template-${OS_VER}_${TYPE}-$(date +"%y-%m-%d_%H-%M-%S").vhd', returnStdout: true).trim()}"
+      }
+
+      when {
+        expression { DEPL_ENV ==~ /(azure)/ }
+      }
+      steps {
+        script {
+          sh 'rsync -avhe "ssh -i ~/.ssh/id_rsa_azure" packer_admin@$BUILDER_WORKER_IP:/home/packer_admin/workspace/template-builder/output-${TEMPL_OS_VER_TYPE}/packer-${TEMPL_OS_VER_TYPE}.vhd /tmp/template_output_image'
+          sh '''
+            az login --service-principal --username ${TF_VAR_az_client_id} --password ${TF_VAR_az_client_secret} --tenant ${TF_VAR_az_tenant_id}
+            AZ_KEY=$(az storage account keys list -n $AZ_STORAGE_ACCOUNT --query [0].value -o tsv)
+            AZ_SAS_TOKEN=$(az storage blob generate-sas --account-name $AZ_STORAGE_ACCOUNT --container-name $AZ_CONTAINER --name $AZ_IMAGE_NAME --auth-mode key --account-key $AZ_KEY --permissions cw --expiry $AZ_EXPIRATION -o tsv)
+            AZ_IMAGE_URL=$(az storage blob url --container-name $AZ_CONTAINER --auth-mode key --account-key $AZ_KEY --name $AZ_IMAGE_NAME --account-name $AZ_STORAGE_ACCOUNT | sed -r 's/"//g')
+            azcopy copy /tmp/template_output_image $AZ_IMAGE_URL?$AZ_SAS_TOKEN --blob-type='PageBlob'
+            az image create -g $AZ_RESOURCE_GROUP --name $AZ_IMAGE_NAME --os-type Linux --source $AZ_IMAGE_URL --location $AZ_LOCATION
+            az logout
+            '''
+          sh 'rm /tmp/template_output_image'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker destroy -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+    }
+  }
+}
