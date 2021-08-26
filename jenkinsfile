@@ -82,6 +82,7 @@ pipeline {
         AZ_RESOURCE_GROUP  = "Templates"
         AZ_STORAGE_ACCOUNT = "templstorage"
         AZ_CONTAINER       = "templates-container"
+        AZ_LOCATION        = "eastus"
         AZ_EXPIRATION      = "${sh(script:'echo $(date -ud "2 hours" "+%Y-%m-%dT%TZ" 2> /dev/null) || expiration=$(date -uv +2H "+%Y-%m-%dT%TZ")', returnStdout: true).trim()}"
         AZ_IMAGE_NAME      = "${sh(script:'echo template-${OS_VER}_${TYPE}-$(date +"%y-%m-%d_%H-%M-%S").vhd', returnStdout: true).trim()}"
       }
@@ -92,6 +93,16 @@ pipeline {
       steps {
         script {
           sh 'rsync -avhe "ssh -i ~/.ssh/id_rsa_azure" packer_admin@$BUILDER_WORKER_IP:/home/packer_admin/workspace/template-builder/output-${TEMPL_OS_VER_TYPE}/packer-${TEMPL_OS_VER_TYPE}.vhd /tmp/template_output_image'
+          sh '''
+            az login --service-principal --username ${TF_VAR_az_client_id} --password ${TF_VAR_az_client_secret} --tenant ${TF_VAR_az_tenant_id}
+            AZ_KEY=$(az storage account keys list -n $AZ_STORAGE_ACCOUNT --query [0].value -o tsv)
+            AZ_SAS_TOKEN=$(az storage blob generate-sas --account-name $AZ_STORAGE_ACCOUNT --container-name $AZ_CONTAINER --name $AZ_IMAGE_NAME --auth-mode key --account-key $AZ_KEY --permissions cw --expiry $AZ_EXPIRATION -o tsv)
+            AZ_IMAGE_URL=$(az storage blob url --container-name $AZ_CONTAINER --auth-mode key --account-key $AZ_KEY --name $AZ_IMAGE_NAME --account-name $AZ_STORAGE_ACCOUNT | sed -r 's/"//g')
+            azcopy copy /tmp/template_output_image $AZ_IMAGE_URL?$AZ_SAS_TOKEN --blob-type='PageBlob'
+            az image create -g $AZ_RESOURCE_GROUP --name $AZ_IMAGE_NAME --os-type Linux --source $AZ_IMAGE_URL --location $AZ_LOCATION
+            az logout
+            '''
+          sh 'rm /tmp/template_output_image'
         }
       }
     }
