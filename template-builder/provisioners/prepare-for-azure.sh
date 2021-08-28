@@ -21,9 +21,6 @@ EOF
 
 ln -s /dev/null /etc/udev/rules.d/75-persistent-net-generator.rules
 
-yum clean all
-yum -y update
-
 sed -i 's/GRUB_CMDLINE_LINUX=".*"/GRUB_CMDLINE_LINUX="rootdelay=300 console=ttyS0 earlyprintk=ttyS0 net.ifnames=0 " /' /etc/default/grub
 grub2-mkconfig -o /boot/grub2/grub.cfg
 
@@ -71,5 +68,3 @@ EOF
 
 sed -i 's/ResourceDisk.Format=y/ResourceDisk.Format=n/g' /etc/waagent.conf
 sed -i 's/ResourceDisk.EnableSwap=y/ResourceDisk.EnableSwap=n/g' /etc/waagent.conf
-
-reboot
