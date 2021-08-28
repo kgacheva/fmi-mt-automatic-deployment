@@ -50,7 +50,7 @@ echo "Allow only Azure datasource, disable fetching network setting via IMDS"
 cat > /etc/cloud/cloud.cfg.d/91-azure_datasource.cfg <<EOF
 datasource_list: [ Azure ]
 datasource:
-Azure:
+  Azure:
     apply_network_config: False
 EOF
 
