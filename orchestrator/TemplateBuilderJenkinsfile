@@ -19,6 +19,7 @@ pipeline {
     TF_VAR_az_tenant_id       = credentials('jenkins-azure-tenant-id')
     TF_VAR_az_client_secret   = credentials('jenkins-azure-client-secret')
     GIT_URL                   = 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
+    DEPL_ENV_PROD             = 'production'
   }
 
   stages {
@@ -38,7 +39,7 @@ pipeline {
 
     stage('Terraform: Generate plan') {
       steps {
-        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker plan -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars'
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker plan -var-file=../../../configurations/${DEPL_ENV}/${DEPL_ENV_PROD}/builder_worker_eph.tfvars'
       }
     }
 
@@ -50,7 +51,7 @@ pipeline {
 
     stage('Terraform: Apply plan and deploy') {
       steps {
-        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker apply -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker apply -var-file=../../../configurations/${DEPL_ENV}/${DEPL_ENV_PROD}/builder_worker_eph.tfvars -auto-approve'
       }
     }
 
@@ -110,7 +111,7 @@ pipeline {
 
   post {
     always {
-      sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker destroy -var-file=../../../configurations/${DEPL_ENV}/builder_worker_eph.tfvars -auto-approve'
+      sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${DEPL_ENV}/builder-worker destroy -var-file=../../../configurations/${DEPL_ENV}/${DEPL_ENV_PROD}/builder_worker_eph.tfvars -auto-approve'
     }
   }
 }

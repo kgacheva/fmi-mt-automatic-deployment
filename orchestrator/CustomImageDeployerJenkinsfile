@@ -1,0 +1,87 @@
+pipeline {
+
+  agent {
+    node {
+      label "slave01"
+    }
+  }
+
+  parameters {
+    string defaultValue: 'azure', description: 'The cloud environment in which the VM should be deployed; defaults to azure', name: 'CLOUD_ENV', trim: true
+    string defaultValue: 'production', description: 'The type of environment for which the custom VM is deployed - one of "production" or "staging"; defaults to production', name: 'DEPL_ENV', trim: true
+    string defaultValue: 'tester_custom_eph', description: 'The role for the custom VM to be deployed; defaults to tester_custom_eph', name: 'VM_ROLE', trim: true
+    string defaultValue: 'template-centos79_minimal-21-08-28_21-09-03.vhd', description: 'The name of the custom image from which to deploy the custom VM; defaults to template-centos79_minimal-21-08-28_21-09-03.vhd', name: 'IMAGE_NAME', trim: true
+  }
+
+  environment {
+    TF_VAR_az_subscription_id = credentials('jenkins-azure-subscription-id')
+    TF_VAR_az_client_id       = credentials('jenkins-azure-client-id')
+    TF_VAR_az_tenant_id       = credentials('jenkins-azure-tenant-id')
+    TF_VAR_az_client_secret   = credentials('jenkins-azure-client-secret')
+    GIT_URL                   = 'https://github.com/kgacheva/fmi-mt-automatic-deployment.git'
+  }
+
+  stages {
+
+    stage('Fetch repository') {
+      steps {
+        git branch: 'main',
+        url: "${GIT_URL}"
+      }
+    }
+
+    stage('Terraform: Initialize workspace') {
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${CLOUD_ENV}/custom-vm init'
+      }
+    }
+
+    stage('Azure: Log in') {
+      when {
+        expression { CLOUD_ENV ==~ /(azure)/ }
+      }
+      steps {
+        script {
+          sh 'az login --service-principal --username ${TF_VAR_az_client_id} --password ${TF_VAR_az_client_secret} --tenant ${TF_VAR_az_tenant_id}'
+        }
+      }
+    }
+
+    stage('Terraform: Generate plan') {
+      environment {
+        TF_VAR_az_vm_src_img_id = "${sh(script:'az image show --resource-group Templates --name $IMAGE_NAME | jq -r .id', returnStdout: true).trim()}"
+      }
+
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${CLOUD_ENV}/custom-vm plan -var-file=../../../configurations/${CLOUD_ENV}/${DEPL_ENV}/${VM_ROLE}.tfvars'
+      }
+    }
+
+    stage('Terraform: Approve plan') {
+      steps {
+        input message: 'Apply the Terraform plan?', ok: 'Yes'
+      }
+    }
+
+    stage('Terraform: Apply plan and deploy') {
+      environment {
+        TF_VAR_az_vm_src_img_id = "${sh(script:'az image show --resource-group Templates --name $IMAGE_NAME | jq -r .id', returnStdout: true).trim()}"
+      }
+
+      steps {
+        sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${CLOUD_ENV}/custom-vm apply -var-file=../../../configurations/${CLOUD_ENV}/${DEPL_ENV}/${VM_ROLE}.tfvars -auto-approve'
+      }
+    }
+
+    stage('Azure: Log out') {
+      when {
+        expression { CLOUD_ENV ==~ /(azure)/ }
+      }
+      steps {
+        script {
+          sh 'az logout'
+        }
+      }
+    }
+  }
+}
