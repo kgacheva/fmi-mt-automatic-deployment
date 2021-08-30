@@ -41,7 +41,7 @@ module "azure-vm-net-sec-group" {
     az_nsg_security_rule        = var.az_nsg_security_rule
 }
 
-module "azure-tester-worker-vm" {
+module "azure-custom-vm-vm" {
     source                             = "../common/vm-custom-linux-in-rg-deploy"
     az_service_principal               = local.az_service_principal
     az_rg_name                         = module.azure-vm-rg.out_az_rg.name
@@ -64,6 +64,6 @@ module "azure-tester-worker-vm" {
     az_vm_remote_exec_commands         = var.az_vm_remote_exec_commands
 }
 
-output "out_az_tester_worker_ip" {
-  value = module.azure-tester-worker-vm.az_vm_linux.public_ip_address
+output "out_az_custom_vm_ip" {
+  value = module.azure-custom-vm-vm.az_vm_linux.public_ip_address
 }

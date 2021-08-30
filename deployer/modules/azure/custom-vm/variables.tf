@@ -63,9 +63,7 @@ variable "az_vm_os_disk" {}
 
 variable "az_vm_comp_name" {}
 
-variable "az_vm_src_img_id"  {
-    default = "/subscriptions/243eb678-7c9f-48f5-a6be-34ecf054732e/resourceGroups/Templates/providers/Microsoft.Compute/images/template-centos79_minimal-21-08-28_21-09-03.vhd"
-}
+variable "az_vm_src_img_id"  {}
 
 variable "az_vm_ssh_key" {}
 
@@ -74,9 +72,9 @@ variable "az_vm_provisioner_file_source" {
 }
 
 variable "az_vm_provisioner_file_destination" {
-    default = "/tmp/tester-worker.sh"
+    default = "/tmp/custom-vm.sh"
 }
 
 variable "az_vm_remote_exec_commands" {
-    default = ["chmod +x /tmp/tester-worker.sh"]
+    default = ["chmod +x /tmp/custom-vm.sh"]
 }
