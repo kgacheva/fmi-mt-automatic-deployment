@@ -21,7 +21,7 @@ terraform -chdir=modules/<ENVIRONMENT>/<DEPLOYMENT> plan -var-file=<relative pat
 ```
 e.g.:
 ```
-$ terraform -chdir=modules/azure/builder-worker plan -var-file=../../../configurations/azure/mt_playground.tfvars -var-file=../../../private/az_secrets.tfvars
+$ terraform -chdir=modules/azure/builder-worker plan -var-file=../../../configurations/azure/staging/mt_playground.tfvars -var-file=../../../private/az_secrets.tfvars
 ```
 
 To put the plan as shown by the previous command in action and create/update the infrastructure:
