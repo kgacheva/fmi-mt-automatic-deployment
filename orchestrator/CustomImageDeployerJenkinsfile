@@ -72,16 +72,11 @@ pipeline {
         sh 'cd $WORKSPACE/deployer && terraform -chdir=modules/${CLOUD_ENV}/custom-vm apply -var-file=../../../configurations/${CLOUD_ENV}/${DEPL_ENV}/${VM_ROLE}.tfvars -auto-approve'
       }
     }
+  }
 
-    stage('Azure: Log out') {
-      when {
-        expression { CLOUD_ENV ==~ /(azure)/ }
-      }
-      steps {
-        script {
-          sh 'az logout'
-        }
-      }
+  post {
+    cleanup {
+      sh 'az logout'
     }
   }
 }
